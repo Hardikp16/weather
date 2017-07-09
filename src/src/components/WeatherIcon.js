@@ -11,9 +11,7 @@ class WeatherIcon extends Component {
    }
 
    weatherTypetoIcon(index) {
-      console.log(index);
-      console.log("index");
-
+  
       let weatherIcons = ["tornado", "day-storm-showers", "hurricane", "thunderstorm", "thunderstorm", 
          ["rain", "snow"], ["rain", "sleet"], ["snow", "sleet"], 
          "hail", "rain-mix", "hail", "showers", "showers", 
@@ -66,23 +64,23 @@ class WeatherIcon extends Component {
    //    return AllIcons;
    // }
 
-   weatherIconElement(weatherIcon) {
+   weatherIconElement(weatherIcon, iconSize) {
       
-      const wiClass = 'wi wi-';
-      const oneIcon = {
-         fontSize: '100px'
+      var fontSize = {
+         fontSize: iconSize + 'px'
       }
-      const twoIcon = {
-         fontSize: '50px'
+      let smallFont =  {
+         fontSize: iconSize/2 + 'px'
       }
 
+
       if(typeof(weatherIcon) === 'string') {
-            return <div>  <i className={'wi wi-' + weatherIcon}> </i> </div>
+            return <div>  <i className={'wi wi-' + weatherIcon} style={fontSize}> </i> </div>
       } else {
-         let multiWeather = weatherIcon.map(function(iconIn, j){
-            return  <i className={'wi wi-' + iconIn}> </i> 
+         var multiWeather = weatherIcon.map(function(iconIn, j){
+            return  <i className={'wi wi-' + iconIn} style={smallFont}> </i> 
          });
-            return <div>  {multiWeather} </div>
+            return   {multiWeather}
       }
    }
 
@@ -90,13 +88,14 @@ class WeatherIcon extends Component {
    
 	render() {
 
-      let weatherIcon = this.weatherTypetoIcon((this.props.weatherType));
-       const oneIcon = {
-         fontSize: '100px'
-      }
+      var iconSize = this.props.iconSize;
 
+      let weatherIcon = this.weatherTypetoIcon((this.props.weatherType));
+         // <i className={'wi wi-' + weatherIcon} style={fontStyle}>  </i> 
 		return (
-          <i className={'wi wi-' + weatherIcon} style={oneIcon}>  </i> 
+         <div>
+            {this.weatherIconElement(weatherIcon, iconSize)}
+         </div>
       );
 	}
 
