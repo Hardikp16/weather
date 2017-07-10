@@ -4,7 +4,6 @@ import $ from 'jquery';
 import SearchInput from './components/SearchInput.js';
 import WeatherIcon from './components/WeatherIcon.js';
 import WeatherForcast from './components/WeatherForcast.js'
-// import './css/weather-icons-wind.min.css';
 
 class App extends Component {
 
@@ -16,13 +15,14 @@ class App extends Component {
          latitude: '',
          longitude: '',
          apiKey: '850f83ef463a250b2288de67d144ab5f',
-         isLoading: false,
+         //isLoading: false,
          weatherAtmosphere: [],
          todayWeather: {},
          weatherCond: '',
          city: '',
          forcasts: {},
-         units:  {}
+         units:  {},
+         error: null,
       };
 
       this.setLatLng = this.setLatLng.bind(this);
@@ -40,12 +40,16 @@ class App extends Component {
       this.setState({units: units});
    }
 
-   convertMetricToImperical(){
-
-   }
-
    getYahooApi(){
       return 'https://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20weather.forecast%20where%20woeid%20in%20(SELECT%20woeid%20FROM%20geo.places%20WHERE%20text%3D%22(' +this.state.latitude +'%2C' +this.state.longitude+ ')%22)&format=json&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys';
+   }
+
+   setError(error){
+      console.log(error);
+
+      this.setState({
+         error: error
+      });
    }
 
    setLatLng(latitude, longitude) {
@@ -53,28 +57,16 @@ class App extends Component {
       this.setState({
          latitude: latitude,
          longitude: longitude,
-         isLoading: false
+         //isLoading: false,
+         error: null
       });
 
       this.getWeather();
    }
 
-   resetLatLng() {
-
-      this.setState({
-         latitude: '',
-         longitude: '',
-      })
-   }
-
    firstLetterUpper(string) {
-      // if(string.length===0){
-      //    return;
-      // }
-      // if(string.length==="")
       return string.charAt(0).toUpperCase() + string.substr(1);
    }
-
 
    getWeather() {
 
@@ -82,12 +74,14 @@ class App extends Component {
 
       $.ajax({url: url,
                type: 'GET',
+
                // data: parms,
                success: (rsp) => {
                   this.setWeatherData(rsp.query.results.channel);
                },
-               error: (rsp) => {
-                  this.handleFailAjax(rsp);
+               error: (rsp) => { 
+                  var error = "There was an error with the weather request. Please try again later";
+                  this.setError(error);
                }
       });
 
@@ -104,6 +98,9 @@ class App extends Component {
       let city = data.location; // city:"Morton Grove"country:"United States"region:" IL"
 
       for( var type in atmosphere) {
+         if(type === "rising"){
+            continue;
+         }
          let unit = this.state.units[type];
          let uType = this.firstLetterUpper(type);
          
@@ -116,14 +113,25 @@ class App extends Component {
          todayWeather: todayWeather,
          forcasts: forcasts,
          city: city,
+         error: null,
       });
    }
 
-   handleFailAjax(error){
-      console.log(error);
+   renderError() {
+
+      if(this.state.error === null) {
+         return null;
+      }
+
+      return (
+         <div class="alert alert-danger" role="alert">
+            <strong>Error!</strong> {this.state.error}
+         </div>
+      );
    }
 
-   renderSearch(){
+
+   renderSearch() {
 
       let panelColor = {
          background: 'rgb(230, 230, 230)'
@@ -135,7 +143,7 @@ class App extends Component {
                <div className="col-sm-3 col-xs-1"> 
                </div>
                <div className="col-sm-6 col-xs-10 text-center panel " style={panelColor}>
-                     <SearchInput setLatLng={this.setLatLng} />
+                     <SearchInput setLatLng={this.setLatLng} setError={this.setError} />
                </div>
                <div className="col-sm-3 col-xs-1"> </div>
          </div>
@@ -182,8 +190,6 @@ class App extends Component {
 
 
       let todaysWeather = this.state.todayWeather;
-      // let todayWeather = data.item.condition; // code:"27"date:"Thu, 06 Jul 2017 10:00 PM CDT"temp:"83"text:"Mostly Cloudy"
-
 
       let weatherAtmosphere = this.state.weatherAtmosphere.map(function(row, i){
          let data = row.data + ' ' + row.unit;     
@@ -194,7 +200,6 @@ class App extends Component {
 
       var iconSize = '100'
    
-
       return(
          <div className="col-sm-6 col-xs-12 col-md-6 text-center panel" style={panelColor}>
             <div>
@@ -229,7 +234,7 @@ class App extends Component {
    renderFooter() {
       let creditArray = [ {href: 'https://facebook.github.io/react/', text: 'React Framework'},
                           {href: 'https://github.com/kenny-hibino/react-places-autocomplete', text:'React Auto Complete Component'},
-                          {href: 'https://openweathermap.org/', text: 'Weather API'},
+                          {href: 'https://developer.yahoo.com/weather/documentation.html', text: 'Yahoo Weather API'},
                           {href: 'http://getbootstrap.com/', text: 'Bootstrap'},
                           {href: 'https://jquery.com/', text: 'jQuery for Ajax'},
                           {href: 'https://erikflowers.github.io/weather-icons/', text: 'Weather Icon'} ];
@@ -250,6 +255,8 @@ class App extends Component {
       return (
      
          <div className="container">
+
+            {this.renderError()}
 
             {/*!-- Title */}
             <div className="col-sm-12 text-center">

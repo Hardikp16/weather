@@ -27,17 +27,20 @@ class Demo extends React.Component {
 
         this.setState({
           loading: false
-        })
+        });
+
         this.props.setLatLng(lat, lng);
 
       })
       .catch((error) => {
-        console.log('Oh no!', error)
-        //this.props.setGeoFail(error);
+        console.log('Oh no!', error);
+
         this.setState({
           loading: false
-        })
-        //this.props.setError(props);
+        });
+
+        var errorMsg = "There was an error with the google location request. Please try again later";
+        this.props.setError(errorMsg);
 
       })
   }

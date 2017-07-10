@@ -11,7 +11,6 @@ class WeatherForcast extends Component {
 		}
 	}
 
-
 	renderTemp(temp) {
       var style = {
          fontSize: '25px',
@@ -52,7 +51,6 @@ class WeatherForcast extends Component {
             </div>
       );
      }, this);
-      // let forcast = data.item.forecast; //code:"30"date:"06 Jul 2017"day:"Thu"high:"91"low:"69"text:"Partly Cloudy"
 
    }
 
