@@ -4,6 +4,7 @@ import $ from 'jquery';
 import SearchInput from './components/SearchInput.js';
 import WeatherIcon from './components/WeatherIcon.js';
 import WeatherForcast from './components/WeatherForcast.js'
+var CryptoJS = require("crypto-js");
 
 class App extends Component {
 
@@ -14,7 +15,7 @@ class App extends Component {
       this.state = {
          latitude: '',
          longitude: '',
-         apiKey: '850f83ef463a250b2288de67d144ab5f',
+         apiKey: 'AIzaSyAzmX7CmJu1-mRePpiUc-iuAmgxaaSnFYA',
          //isLoading: false,
          weatherAtmosphere: [],
          todayWeather: {},
@@ -41,7 +42,7 @@ class App extends Component {
    }
 
    getYahooApi(){
-      return 'https://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20weather.forecast%20where%20woeid%20in%20(SELECT%20woeid%20FROM%20geo.places%20WHERE%20text%3D%22(' +this.state.latitude +'%2C' +this.state.longitude+ ')%22)&format=json&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys';
+      return 'https://weather-ydn-yql.media.yahoo.com/forecastrss';
    }
 
    setError(error){
@@ -71,13 +72,56 @@ class App extends Component {
    getWeather() {
 
       let url = this.getYahooApi();
+      var query = { 
+                     'lat': this.state.latitude, 
+                     'lon': this.state.longitude, 
+                     'format': 'json'
+                  };
 
-      $.ajax({url: url,
-               type: 'GET',
+      var method = 'GET';
+      var app_id = 'vxBHJ43c';
+      var consumer_key = 'dj0yJmk9SmhvVTVqYUJDREM3JmQ9WVdrOWRuaENTRW8wTTJNbWNHbzlNQS0tJnM9Y29uc3VtZXJzZWNyZXQmc3Y9MCZ4PTkx';
+      var consumer_secret = 'e1730614dac1389c5a6371b48b1f714bfa168ba0';
+      var concat = '&';
+      var oauth = {
+         'oauth_consumer_key': consumer_key,
+         'oauth_nonce': Math.random().toString(36).substring(2),
+         'oauth_signature_method': 'HMAC-SHA1',
+         'oauth_timestamp': parseInt(new Date().getTime() / 1000).toString(),
+         'oauth_version': '1.0'
+      };
+
+      var merged = {}; 
+      $.extend(merged, query, oauth);
+      // Note the sorting here is required
+      var merged_arr = Object.keys(merged).sort().map(function(k) {
+      return [k + '=' + encodeURIComponent(merged[k])];
+      });
+      var signature_base_str = method
+      + concat + encodeURIComponent(url)
+      + concat + encodeURIComponent(merged_arr.join(concat));
+
+      var composite_key = encodeURIComponent(consumer_secret) + concat;
+      var hash = CryptoJS.HmacSHA1(signature_base_str, composite_key);
+      var signature = hash.toString(CryptoJS.enc.Base64);
+
+      oauth['oauth_signature'] = signature;
+      var auth_header = 'OAuth ' + Object.keys(oauth).map(function(k) {
+      return [k + '="' + oauth[k] + '"'];
+      }).join(',');
+
+
+      $.ajax({
+               url: url + '?' + $.param(query),
+               headers: {
+                  'Authorization': auth_header,
+                  'X-Yahoo-App-Id': app_id 
+               },
+               method: 'GET',
 
                // data: parms,
                success: (rsp) => {
-                  this.setWeatherData(rsp.query.results.channel);
+                  this.setWeatherData(rsp);
                },
                error: (rsp) => { 
                   var error = "There was an error with the weather request. Please try again later";
@@ -91,10 +135,11 @@ class App extends Component {
       console.log(data);
       var weatherAtmosphere = [];
 
-      let astronomy = data.astronomy;  // sunrise:"5:22 am"sunset:"8:29 pm"
-      let atmosphere = data.atmosphere; //humidity:"61"pressure:"991.0"rising:"0"visibility:"16.1"
-      let todayWeather = data.item.condition; // code:"27"date:"Thu, 06 Jul 2017 10:00 PM CDT"temp:"83"text:"Mostly Cloudy"
-      let forcasts = data.item.forecast; //code:"30"date:"06 Jul 2017"day:"Thu"high:"91"low:"69"text:"Partly Cloudy"
+      let astronomy = data.current_observation.astronomy;  // sunrise:"5:22 am"sunset:"8:29 pm"
+      let atmosphere = data.current_observation.atmosphere; //humidity:"61"pressure:"991.0"rising:"0"visibility:"16.1"
+      let todayWeather = data.current_observation.condition; // code:"27"date:"Thu, 06 Jul 2017 10:00 PM CDT"temp:"83"text:"Mostly Cloudy"
+      let wind = data.current_observation.wind //
+      let forcasts = data.forecasts; //code:"30"date:"06 Jul 2017"day:"Thu"high:"91"low:"69"text:"Partly Cloudy"
       let city = data.location; // city:"Morton Grove"country:"United States"region:" IL"
 
       for( var type in atmosphere) {
@@ -217,7 +262,7 @@ class App extends Component {
                <div className="row">
                   <div className="col-md-7 col-sm-6 col-xs-7" style={mainWeatherStyle}>
                      <WeatherIcon weatherType={todaysWeather.code} iconSize={iconSize} />
-                     {this.renderTemp(todaysWeather.temp)}
+                     {this.renderTemp(todaysWeather.temperature)}
                   </div>
                   <div className="col-md-5 col-sm-3 col-xs-5" style={weatherInfoDomStyle}>
                      {weatherAtmosphere}
